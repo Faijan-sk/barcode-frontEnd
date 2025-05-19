@@ -1,0 +1,142 @@
+"use client";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { useState, useRef, useContext } from "react";
+import signup from "/public/img/signup/signup.png";
+import axiosInstance from "@/lib/axiosInstance";
+
+import { AuthContext } from "@/lib/context/AuthContext";
+
+const LoginPage = () => {
+  const router = useRouter();
+  const [username, setUsername] = useState<string>("gulam000");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [serverError, setServerError] = useState<string>("");
+
+  const { login } = useContext(AuthContext);
+
+  const inputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const requestBody = {
+      username,
+      password,
+      /***
+       * ! live details
+       */
+      // user_uid: "22894830",
+      // dist_api:
+      //   "dbf9ad8a65d441ef8212d31d89389548a30182e123e957f90e49a167ecfe2c13",
+      /**\
+       * ! local details
+       *   */
+      user_uid: "44505337",
+      dist_api:
+        "095b105359b0bceec998dd0f002707ae0e64f191f6550ef1f246d33b605039ce",
+    };
+
+    try {
+      setServerError("");
+      const response = await axiosInstance.post("/dislogin", {
+        ...requestBody,
+      });
+      const { data } = response;
+      login(data.access);
+    } catch (err: any) {
+      if (err?.response?.status == 403) {
+        setServerError(err?.response?.data?.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  (() => {
+    router.replace("/send-top-up");
+  })();
+  return (
+    <section className="signup__section bluar__shape">
+      <div className="container">
+        <div className="row align-items-center justify-content-between">
+          <div className="col-xl-6 col-lg-6">
+            <div className="login__boxes">
+              <h4>Login</h4>
+              <p className="head__pra mb__30">
+                Log in to your account and make recharges faster
+              </p>
+              <form className="signup__form" onSubmit={handleSubmit}>
+                <div className="row g-4">
+                  <div className="col-lg-12">
+                    <div className="input__grp">
+                      <label>Username</label>
+                      <input
+                        type="text"
+                        placeholder="Enter your username here "
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                      />
+                    </div>
+                    <div className="input__grp my-3">
+                      <label>Password</label>
+
+                      <input
+                        type="password"
+                        placeholder="Enter your Password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-danger fw-bolder">{serverError}</p>
+
+                  {/* <Link href="/login/forgetPassword" className="forgot">
+                    Forgot Password?
+                  </Link> */}
+                  <div className="col-lg-12 d-flex gap-2">
+                    <div className="input__grp">
+                      <button
+                        type="submit"
+                        className="cmn__btn"
+                        disabled={loading}
+                      >
+                        <span>{loading ? "Logging in..." : "Login In"}</span>
+                      </button>
+                    </div>
+                    <div className="input__grp">
+                      <button
+                        className="cmn__btn"
+                        disabled={loading}
+                        onClick={() => router.push("/send-top-up/")}
+                      >
+                        <span>Skip Login</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div className="col-xl-5 col-lg-6">
+            <div className="signup__thumb">
+              <Image src={signup} alt="img" className="h-100" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default LoginPage;
