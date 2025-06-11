@@ -1,34 +1,40 @@
-import React, { SetStateAction, useState } from "react";
-import Input from "react-select/dist/declarations/src/components/Input";
+import React, { SetStateAction, useState } from 'react'
+import Input from 'react-select/dist/declarations/src/components/Input'
 
-import oxxo from "@/public/img/operators/store/oxxo.jpeg";
-import seven from "@/public/img/operators/store/seven-11.jpeg";
-import Soriana from "@/public/img/operators/store/Soriana.webp";
+import oxxo from '@/public/img/operators/store/oxxo.jpeg'
+import seven from '@/public/img/operators/store/seven-11.jpeg'
+import Soriana from '@/public/img/operators/store/Soriana.webp'
 
-import Image from "next/image";
-import axiosInstance from "@/lib/axiosInstance";
+import Image from 'next/image'
+import axiosInstance from '@/lib/axiosInstance'
+import { handleLogin } from './Packages'
+
+// ** Routes Hook
+import { useRouter } from 'next/navigation'
+import { useDispatch } from 'react-redux'
+import { removePlans } from '@/redux/plans'
 
 const images = [
   {
     image: oxxo,
-    value: "oxxo_mx",
+    value: 'oxxo_mx',
   },
   {
     image: seven,
-    value: "sipe_mx",
+    value: 'sipe_mx',
   },
   {
     image: Soriana,
-    value: "",
+    value: '',
   },
-];
+]
 
 interface AmtModalProps {
-  showModal: boolean;
-  handleClose: () => void;
-  title: string;
-  selectedPlan: object;
-  sendToServer: Function;
+  showModal: boolean
+  handleClose: () => void
+  title: string
+  selectedPlan: object
+  sendToServer: Function
 }
 
 const AmtModal: React.FC<AmtModalProps> = ({
@@ -38,60 +44,80 @@ const AmtModal: React.FC<AmtModalProps> = ({
   selectedPlan,
   sendToServer,
 }) => {
-  console.log(showModal);
   // ** State
-  const [amount, setAmount] = useState<any>(); // Specify number type explicitly
+  const [amount, setAmount] = useState<any>() // Specify number type explicitly
+
+  const router = useRouter()
+  const dispatch = useDispatch()
 
   const handleSend = () => {
     if (!amount) {
-      alert("Please Enter Amount");
-      return;
+      alert('Please Enter Amount')
+      return
     }
     const data = {
       ...selectedPlan,
       amount,
-    };
-    handleClose();
-    sendToServer(data);
-  };
+    }
+    handleClose()
+    sendToServer(data)
+  }
 
   const handleGenerateBarcode = async (tmid: string) => {
-    const newTab = window.open("", "_blank");
+    debugger
+    const newTab = window.open('', '_blank')
 
     if (!newTab) {
       alert(
-        "El bloqueador de ventanas emergentes impidió abrir una nueva pestaña. Por favor, permite las ventanas emergentes para este sitio."
+        'El bloqueador de ventanas emergentes impidió abrir una nueva pestaña. Por favor, permite las ventanas emergentes para este sitio.'
         //'Popup blocker prevented opening a new tab. Please allow pop-ups for this site.'
-      );
-      return;
+      )
+      return
     }
     try {
-      const res = await axiosInstance.post("/generate-barcode/", {
+      // const accessToken = localStorage.getItem('access')
+      // if (!accessToken) {
+      //   await handleLogin()
+      // }
+      const res = await axiosInstance.post('/generate-barcode/', {
         ...selectedPlan,
         tmid,
-      });
-      const { data } = res;
+      })
+      const { data } = res
 
       if (data.payment_response.url) {
-        newTab.location.href = data.payment_response.url;
+        newTab.location.href = data.payment_response.url
       } else {
-        alert("No se pudo generar la URL del código de barras.");
-        newTab.close();
+        alert('No se pudo generar la URL del código de barras.')
+        newTab.close()
       }
-    } catch (error) {
-      alert("¡Algo salió mal!");
-      console.error("Error generating barcode:", error);
-      newTab.close();
-    } finally {
+    } catch (error: unknown) {
+      debugger
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as any).response === 'object' &&
+        (error as any).response?.status === 401
+      ) {
+        localStorage.removeItem('access')
+        localStorage.removeItem('plansDetails')
+        router.replace('/send-top-up/')
+        dispatch(removePlans())
+      }
+
+      alert('¡Algo salió mal!')
+      console.error('Error generating barcode:', error)
+      newTab.close()
     }
-  };
+  }
 
   return (
     <div
-      className={`modal fade ${showModal ? "show d-block" : ""}`}
+      className={`modal fade ${showModal ? 'show d-block' : ''}`}
       tabIndex={-1}
       role="dialog"
-      style={{ background: showModal ? "rgba(0,0,0,0.5)" : "none" }}
+      style={{ background: showModal ? 'rgba(0,0,0,0.5)' : 'none' }}
     >
       <div className="modal-dialog modal-dialog-centered" role="document">
         <div className="modal-content">
@@ -106,20 +132,20 @@ const AmtModal: React.FC<AmtModalProps> = ({
           <div className="modal-body">
             <div className="d-flex justify-content-center gap-3">
               {[
-                { src: oxxo, alt: "telcel_logo", value: "oxxo_mx" },
-                { src: seven, alt: "att_logo", value: "sipe_mx" },
-                { src: Soriana, alt: "moviestar", value: "sipe_mx" },
+                { src: oxxo, alt: 'telcel_logo', value: 'oxxo_mx' },
+                { src: seven, alt: 'att_logo', value: 'sipe_mx' },
+                { src: Soriana, alt: 'moviestar', value: 'sipe_mx' },
               ].map((operator, index) => (
                 <Image
                   key={index}
                   style={{
-                    borderRadius: "10px",
-                    padding: "5px",
-                    width: "20%",
-                    height: "auto",
-                    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+                    borderRadius: '10px',
+                    padding: '5px',
+                    width: '20%',
+                    height: 'auto',
+                    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.2)',
                     // border: opr === operator.value ? "3px solid black" : "none",
-                    cursor: "pointer",
+                    cursor: 'pointer',
                   }}
                   src={operator.src}
                   alt={operator.alt}
@@ -147,10 +173,10 @@ const AmtModal: React.FC<AmtModalProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AmtModal;
+export default AmtModal
 
 /*
 

@@ -23,11 +23,13 @@ import { useRouter } from 'next/navigation'
 import { addPlans } from '@/redux/plans'
 
 // ** Reduxt Hook
+
 import { useDispatch } from 'react-redux'
 import parsePhoneNumberFromString, { CountryCode } from 'libphonenumber-js'
 import axios, { AxiosError } from 'axios'
 import withPrivateRoute from '@/hook/withPrivateRoute'
 import { AuthContext } from '@/lib/context/AuthContext'
+import { handleLogin } from '../order/Packages'
 
 // ** interface
 interface Country {
@@ -56,7 +58,6 @@ const SendTopUp: React.FC = () => {
   const [opr, setOpr] = useState<string | null>(null)
   const [serverErrors, setSetServerErrors] = useState<string | null>(null)
   const [fetchPlanLoader, setFetchPlanLoader] = useState<string>('Recargar')
-
   const [errors, setErrors] = useState({
     msisdn: '',
     opr: '',
@@ -64,7 +65,9 @@ const SendTopUp: React.FC = () => {
   })
 
   // ** Hook
+
   const dispatch = useDispatch()
+
   const router = useRouter()
 
   const { login } = useContext(AuthContext)
@@ -108,6 +111,10 @@ const SendTopUp: React.FC = () => {
     setFetchPlanLoader('Validando número...')
     try {
       setSetServerErrors('')
+      const accessToken = localStorage.getItem('access')
+      if (!accessToken) {
+        await handleLogin()
+      }
       const params = `/get_product/`
       const res = await axiosInstance.post(params, body)
 
@@ -131,11 +138,23 @@ const SendTopUp: React.FC = () => {
     } catch (error: unknown) {
       const axiosError = error as AxiosError<CustomErrorResponse>
       console.error('Error fetching product:', error)
+      if (axiosError?.response?.status === 401) {
+        handleRegenerateToken()
+      }
       if (axiosError?.response?.status === 400) {
-        setSetServerErrors('Teléfono Inválido' || 'Detalles no válidos')
+        setSetServerErrors('Teléfono Inválido')
       }
     } finally {
       setFetchPlanLoader('Planes de recarga')
+    }
+  }
+
+  const handleRegenerateToken = async () => {
+    try {
+      await handleLogin()
+      await handleSend()
+    } catch (error) {
+      console.log(error)
     }
   }
 
@@ -155,35 +174,7 @@ const SendTopUp: React.FC = () => {
     setErrors((prev) => ({ ...prev, opr: '' })) // Remove error
   }
 
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const requestBody = {
-          username: 'gulam000',
-          password: 'gulam000',
-          /***
-           * ! live details
-           */
-          user_uid: '22894830',
-          dist_api:
-            'dbf9ad8a65d441ef8212d31d89389548a30182e123e957f90e49a167ecfe2c13',
-          /**\
-           * ! local details
-           *   */
-          // user_uid: "44505337",
-          // dist_api:
-          //   "095b105359b0bceec998dd0f002707ae0e64f191f6550ef1f246d33b605039ce",
-        }
-        const response = await axiosInstance.post('/dislogin', {
-          ...requestBody,
-        })
-        const { data } = response
-        login(data.access)
-      } catch (error) {
-        router.push('/server-error/')
-      }
-    })()
-  }, [])
+  useEffect(() => {}, [])
 
   return (
     <section className="top-up-section mt-10">

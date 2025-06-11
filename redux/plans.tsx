@@ -31,9 +31,12 @@ export const plansSlice = createSlice({
         JSON.stringify(action.payload)
       )
     },
+    removePlans: (state) => {
+      state.plansDetails = {}
+    },
   },
 })
 
-export const { addPlans } = plansSlice.actions
+export const { addPlans, removePlans } = plansSlice.actions
 
 export default plansSlice.reducer

@@ -60,6 +60,20 @@ interface Operator {
   image: any
 }
 
+const userLoginBody = {
+  username: 'sagar',
+  password: 'B!N@ry10240569',
+  user_uid: '27441322',
+  dist_api: '50bf27e4a9cf6cab27e5d7015ce8b35646cb1ea888324270fb1b48d1a9d4fc40',
+}
+
+export const handleLogin = async () => {
+  const response = await axiosInstance.post('/dislogin', {
+    ...userLoginBody,
+  })
+  const { data } = response
+  localStorage.setItem('access', data.access)
+}
 const Packages: React.FC<PropType> = ({ activeList }) => {
   const [fetchBarcodeLoader, setFetchPlanLoader] = useState<string | false>(
     false
@@ -93,6 +107,10 @@ const Packages: React.FC<PropType> = ({ activeList }) => {
     setFetchPlanLoader(`${Skuid}${pdn}`)
     try {
       setIsGenerateBarcode(true)
+      // const accessToken = localStorage.getItem('access')
+      // if (!accessToken) {
+      //   await handleLogin()
+      // }
       const res = await axiosInstance.post('/generate-barcode/', {
         Skuid,
         pdn,
@@ -240,6 +258,7 @@ const Packages: React.FC<PropType> = ({ activeList }) => {
                         margin: '10px 0',
                         fontWeight: 'bold',
                         fontSize: isMobile ? '14px' : '16px',
+                        textOverflow: 'ellipsis',
                       }}
                     >
                       {pr?.crn} {pr?.amt ?? '0.00'}
